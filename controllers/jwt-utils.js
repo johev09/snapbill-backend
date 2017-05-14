@@ -25,7 +25,7 @@ var controller = {
     checkToken: (req, res, next) => {
         if (!controller.validToken(req)) {
             res.status(401).json({
-                message: 'Invalid Token'
+                message: 'invalid token'
             });
         } else {
             next();
