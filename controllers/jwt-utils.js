@@ -7,9 +7,10 @@ var controller = {
         if (token) {
             try {
                 var decoded = jwt.verify(token, config.secret);
-                console.log(decoded);
+//                console.log(decoded);
                 return decoded.message === req.params.id;
             } catch (err) {
+                console.log("JWT DECODE ERROR");
                 console.log(err);
                 return false;
             }

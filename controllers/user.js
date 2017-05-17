@@ -177,7 +177,7 @@ var controller = {
                     temp_password: 1,
                     temp_password_time: 1,
                     activated: 1,
-                    _id: 0,
+                    _id: 1,
                 })
                 .then(users => {
                     if (users.length === 0) {
@@ -191,7 +191,7 @@ var controller = {
                 })
                 .catch(err => reject({
                     status: 500,
-                    message: 'Internal Server Error'
+                    message: 'internal server error'
                 }));
         });
     },

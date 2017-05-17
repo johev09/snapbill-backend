@@ -8,13 +8,10 @@ const userSchema = mongoose.Schema({
     name: String,
     email: String,
     hashed_password: String,
-    created_at: String,
+    created_at: Date,
     temp_password: String,
-    temp_password_time: String,
+    temp_password_time: Date,
     activated: Boolean,
 });
-
-mongoose.Promise = global.Promise;
-mongoose.connect(config.mongodbConnect);
 
 module.exports = mongoose.model('user', userSchema);

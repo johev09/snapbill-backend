@@ -4,6 +4,7 @@ var router = express.Router();
 const auth = require('basic-auth');
 const user = require('../controllers/user.js');
 const jwtUtils = require('../controllers/jwt-utils');
+
 router.post('/register', (req, res) => {
     const name = req.body.name;
     const email = req.body.email;
@@ -65,6 +66,7 @@ router.post('/is-authorized/:id', jwtUtils.checkToken, (req, res) => {
         message: result.message
     });
 });
+
 router.get('/get/:id', jwtUtils.checkToken, (req, res) => {
     user.get(req.params.id)
         .then(result => res.json(result))
