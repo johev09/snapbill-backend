@@ -10,6 +10,7 @@ routes:
   - [x] /get/:id **(jwt auth)**
   - [x] /pass/change
   - [x] /pass/reset
+  
 - [x] /bill **(jwt auth)**
   - [x] /add/:id
   - [x] /getall/:id - **all bills for an user**
