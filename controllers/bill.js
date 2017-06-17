@@ -57,44 +57,32 @@ var controller = {
 
     get: (billid) => {
         return new Promise((resolve, reject) => {
-            billModel.find({
-                    _id: billid
-                }, {
-                    user: 0,
-                    __v: 0,
-                    created_at: 0
-                })
+            billModel.getReadable(billid)
                 .then(bills => resolve(bills[0]))
                 .catch(err => reject(err));
         });
     },
     getAll: (userid) => {
         return new Promise((resolve, reject) => {
-            users.get(userid)
-                .then(user => {
-                    billModel.find({
-                            user: user._id
-                        }, {
-                            _id: 1,
-                            merchant: 1,
-                            amount: 1,
-                            currency: 1,
-                            category: 1,
-                            date: 1,
-                        })
-                        .then(bills => resolve(bills))
-                        .catch(err => reject(err))
+            billModel.fromEmail(userid)
+                .then(bills => {
+                    console.log(bills);
+                    resolve(bills)
                 })
                 .catch(err => reject(err));
-
+        });
+    },
+    getAfter: (userid, date) => {
+        return new Promise((resolve, reject) => {
+            billModel.getAfter(userid, date)
+                .then(bills => resolve(bills))
+                .catch(err => reject(err));
         });
     },
 
     update: (values) => {
         return new Promise((resolve, reject) => {
-            billModel.find({
-                    _id: values.billid
-                })
+            billModel.getEditable(values.billid)
                 .then(bills => {
                     if (!bills || bills.length == 0) {
                         reject({
@@ -141,9 +129,7 @@ var controller = {
 
     delete: (billid) => {
         return new Promise((resolve, reject) => {
-            billModel.remove({
-                    _id: billid
-                })
+            billModel.delete(billid)
                 .then(() => resolve({
                     status: 200,
                     message: 'bill deleted'

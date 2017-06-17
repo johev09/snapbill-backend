@@ -168,7 +168,8 @@ var controller = {
     },
     get: (email) => {
         return new Promise((resolve, reject) => {
-            userModel.find({
+
+            /*userModel.find({
                     email: email
                 }, {
                     name: 1,
@@ -188,7 +189,9 @@ var controller = {
                     } else {
                         resolve(users[0])
                     }
-                })
+                })*/
+            userModel.fromEmailReadOnly(email)
+                .then(user => resolve(user))
                 .catch(err => reject({
                     status: 500,
                     message: 'internal server error'
