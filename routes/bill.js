@@ -8,6 +8,7 @@ const jwtUtils = require('../controllers/jwt-utils');
 const response = require('./response');
 
 router.post('/add/:id', jwtUtils.checkToken, (req, res) => {
+    console.log(req.body);
     if (!req.body.merchant ||
         !req.body.amount ||
         !req.body.currency ||
@@ -30,6 +31,17 @@ router.post('/add/:id', jwtUtils.checkToken, (req, res) => {
 
 router.get('/getall/:id', jwtUtils.checkToken, (req, res) => {
     bill.getAll(req.params.id)
+        .then(bills => {
+            res.status(200).json({
+                bills: bills
+            })
+        })
+        .catch(response.error(res));
+}); 
+
+router.get('/get/:id/after/:date', jwtUtils.checkToken, (req, res) => {
+    var afterDate = new Date(req.params.date);
+    bill.getAfter(req.params.id, afterDate)
         .then(bills => {
             res.status(200).json({
                 bills: bills
