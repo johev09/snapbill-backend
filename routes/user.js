@@ -5,6 +5,10 @@ const auth = require('basic-auth');
 const user = require('../controllers/user.js');
 const jwtUtils = require('../controllers/jwt-utils');
 
+router.post('/auth/fb',(req,res)=>{
+    
+});
+
 router.post('/register', (req, res) => {
     const name = req.body.name;
     const email = req.body.email;
@@ -40,14 +44,14 @@ router.get('/activate/:id/:token', (req, res) => {
 router.post('/authenticate', (req, res) => {
     const credentials = auth(req);
     if (!credentials) {
-        res.status(400).json({
+        res.status(401).json({
             message: 'Invalid Request'
         });
     }
     else {
         user.login(credentials.name, credentials.pass).then(result => {
             res.status(result.status).json({
-                message: result.message
+                    message: result.message
                 , token: jwtUtils.getToken(result)
             });
         }).catch(err => res.status(err.status).json({
