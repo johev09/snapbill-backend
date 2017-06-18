@@ -5,8 +5,27 @@ const auth = require('basic-auth');
 const user = require('../controllers/user.js');
 const jwtUtils = require('../controllers/jwt-utils');
 
-router.post('/auth/fb',(req,res)=>{
-    
+router.post('/auth/fb', (req, res) => {
+    const name = req.body.name;
+    const email = req.body.email;
+    const pictureUrl = req.body.pictureUrl;
+
+    if (!name || !email || !pictureUrl || !name.trim() || !email.trim() || !pictureUrl.trim()) {
+        res.status(400).json({
+            message: 'Invalid Request!'
+        });
+    } else {
+        user.registerFB(name, email, pictureUrl).then(result => {
+            res.status(result.status).json({
+                message: email,
+                token: jwtUtils.getToken({
+                    message: email
+                })
+            });
+        }).catch(err => res.status(err.status).json({
+            message: err.message
+        }));
+    }
 });
 
 router.post('/register', (req, res) => {
@@ -17,10 +36,8 @@ router.post('/register', (req, res) => {
         res.status(400).json({
             message: 'Invalid Request !'
         });
-    }
-    else {
+    } else {
         user.register(name, email, password).then(result => {
-            //                res.setHeader('Location', '/users/' + email);
             res.status(result.status).json({
                 message: result.message
             });
@@ -29,6 +46,7 @@ router.post('/register', (req, res) => {
         }));
     }
 });
+
 router.get('/activate/:id/:token', (req, res) => {
     const email = req.params.id;
     const token = req.params.token;
@@ -47,16 +65,17 @@ router.post('/authenticate', (req, res) => {
         res.status(401).json({
             message: 'Invalid Request'
         });
-    }
-    else {
-        user.login(credentials.name, credentials.pass).then(result => {
-            res.status(result.status).json({
-                    message: result.message
-                , token: jwtUtils.getToken(result)
-            });
-        }).catch(err => res.status(err.status).json({
-            message: err.message
-        }));
+    } else {
+        user.login(credentials.name, credentials.pass)
+            .then(result => {
+                res.status(result.status).json({
+                    message: result.message,
+                    token: jwtUtils.getToken(result)
+                });
+            })
+            .catch(err => res.status(err.status).json({
+                message: err.message
+            }));
     }
 });
 router.post('/is-authorized/:id', jwtUtils.checkToken, (req, res) => {
@@ -64,7 +83,7 @@ router.post('/is-authorized/:id', jwtUtils.checkToken, (req, res) => {
         status: 200,
         message: req.params.id
     };
-    
+
     res.status(200).json({
         token: jwtUtils.getToken(result),
         message: result.message
@@ -88,16 +107,14 @@ router.post('/pass/change/:id', (req, res) => {
             res.status(400).json({
                 message: 'Invalid Request !'
             });
-        }
-        else {
+        } else {
             user.changePassword(req.params.id, oldPassword, newPassword).then(result => res.status(result.status).json({
                 message: result.message
             })).catch(err => res.status(err.status).json({
                 message: err.message
             }));
         }
-    }
-    else {
+    } else {
         res.status(401).json({
             message: 'Invalid Token !'
         });
@@ -105,9 +122,9 @@ router.post('/pass/change/:id', (req, res) => {
 });
 router.get('/pass/reset/:id/:token', (req, res) => {
     res.render('pass-reset', {
-        title: 'Password Reset'
-        , token: req.params.token
-        , id: req.params.id
+        title: 'Password Reset',
+        token: req.params.token,
+        id: req.params.id
     });
 });
 router.post('/pass/reset/:id', (req, res) => {
@@ -122,8 +139,7 @@ router.post('/pass/reset/:id', (req, res) => {
         }).catch(err => res.status(err.status).json({
             message: err.message
         }));
-    }
-    else {
+    } else {
         user.resetPasswordFinish(email, token, newPassword).then(result => res.status(result.status).json({
             message: result.message
         })).catch(err => res.status(err.status).json({

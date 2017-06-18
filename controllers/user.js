@@ -1,6 +1,8 @@
 const userModel = require('../models/user');
+const fbUserModel = require('../models/fb-user')
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const common = require('./common')
 var emailValidator = require("email-validator");
 
 const config = require('../config');
@@ -18,57 +20,103 @@ var controller = {
                     message: 'Invalid Email'
                 })
             } else {
-                controller.get(email)
-                    .then(user => {
-                        reject({
-                            status: 401,
-                            message: 'Email already exist'
+
+                const salt = bcrypt.genSaltSync(10);
+                const hash = bcrypt.hashSync(password, salt);
+
+                const newUser = new userModel({
+                    name: name,
+                    email: email,
+                    hashed_password: hash,
+                    created_at: new Date(),
+                    activated: false
+                });
+                newUser.save()
+                    .then(() => {
+                        controller.sendActivationMail(newUser);
+                        resolve({
+                            status: 201,
+                            message: 'User registered sucessfully'
                         })
                     })
                     .catch(err => {
-                        if (err.status === 400) {
-                            const salt = bcrypt.genSaltSync(10);
-                            const hash = bcrypt.hashSync(password, salt);
-
-                            const newUser = new userModel({
-                                name: name,
-                                email: email,
-                                hashed_password: hash,
-                                created_at: new Date(),
-                                activated: false
+                        console.log(err);
+                        if (err.code == 11000) {
+                            reject({
+                                status: 409,
+                                message: 'User already registered'
                             });
-                            newUser.save()
-                                .then(() => {
-                                    controller.sendActivationMail(newUser);
-                                    resolve({
-                                        status: 201,
-                                        message: 'User registered sucessfully'
-                                    })
-                                })
-                                .catch(err => {
-                                    if (err.code == 11000) {
-                                        reject({
-                                            status: 409,
-                                            message: 'User already registered'
-                                        });
-                                    } else {
-                                        reject({
-                                            status: 500,
-                                            message: 'Internal server error'
-                                        });
-                                    }
-                                });
                         } else {
                             reject({
                                 status: 500,
-                                message: "Internal server error"
-                            })
+                                message: 'Internal server error'
+                            });
                         }
                     });
 
-
             }
         });
+    },
+    registerFB: (name, email, pictureUrl) => {
+        return new Promise((resolve, reject) => {
+            if (!emailValidator.validate(email)) {
+                reject({
+                    status: 401,
+                    message: 'Invalid Email'
+                })
+            } else {
+                //looking for user in base user table 
+                userModel.fromEmail(email)
+                    .then(user => {
+                        //user exists in base table
+                        //checking if already Fb Auth'd
+                        if (user.fb_user) {
+                            resolve({
+                                status: 200,
+                                message: email
+                            })
+                        }
+                        //not already fb auth'd
+                        //need to add to fb_user 
+                        //store ref to base user table
+                        else {
+                            fbUserModel.add(name, email, pictureUrl)
+                                .then((fbUser) => {
+                                    user.fb_user = fbUser;
+                                    user.save().then(() => {
+                                        resolve({
+                                            status: 200,
+                                            message: "user saved"
+                                        })
+                                    })
+                                })
+                                .catch(common.internalServerError.bind(reject))
+                        }
+                    })
+                    //create a new User document in
+                    //fb-user with ref in user
+                    .catch(err => {
+                        fbUserModel.add(name, email, pictureUrl)
+                            .then((fbUser) => {
+                                userModel.addFromFB(fbUser)
+                                    .then(() => {
+                                        resolve({
+                                            status: 200,
+                                            message: email
+                                        })
+                                    })
+                                    .catch((err) => {
+                                        reject({
+                                            status: 500,
+                                            message: "Internal Server error"
+                                        })
+                                    })
+                            })
+                            .catch(common.internalServerError(reject))
+                    })
+            }
+        });
+
     },
     sendActivationMail: (user) => {
         const salt = bcrypt.genSaltSync(10);
@@ -157,45 +205,14 @@ var controller = {
                         });
                     }
                 })
-                .catch(err => {
-                    console.log(err);
-                    reject({
-                        status: 500,
-                        message: 'Internal Server Error'
-                    })
-                });
+                .catch(common.internalServerError(reject))
         });
     },
     get: (email) => {
         return new Promise((resolve, reject) => {
-
-            /*userModel.find({
-                    email: email
-                }, {
-                    name: 1,
-                    email: 1,
-                    created_at: 1,
-                    temp_password: 1,
-                    temp_password_time: 1,
-                    activated: 1,
-                    _id: 1,
-                })
-                .then(users => {
-                    if (users.length === 0) {
-                        reject({
-                            status: 400,
-                            message: 'User Not Found'
-                        })
-                    } else {
-                        resolve(users[0])
-                    }
-                })*/
             userModel.fromEmailReadOnly(email)
                 .then(user => resolve(user))
-                .catch(err => reject({
-                    status: 500,
-                    message: 'internal server error'
-                }));
+                .catch(common.internalServerError(reject))
         });
     },
     getWritable: (email) => {
@@ -213,10 +230,7 @@ var controller = {
                         resolve(users[0])
                     }
                 })
-                .catch(err => reject({
-                    status: 500,
-                    message: 'Internal Server Error'
-                }));
+                .catch(common.internalServerError(reject))
         });
     },
     changePassword: (email, password, newPassword) => {
@@ -243,10 +257,7 @@ var controller = {
                     status: 200,
                     message: 'Password updated sucessfully'
                 }))
-                .catch(err => reject({
-                    status: 500,
-                    message: 'Internal server error'
-                }));
+                .catch(common.internalServerError(reject))
         });
     },
     resetPasswordInit: (email) => {
@@ -270,13 +281,7 @@ var controller = {
                         message: 'Check mail for instructions'
                     })
                 })
-                .catch(err => {
-                    console.log(err);
-                    reject({
-                        status: 500,
-                        message: 'Internal server error'
-                    });
-                });
+                .catch(common.internalServerError(reject))
         });
     },
     resetPasswordFinish: (email, token, password) => {

@@ -6,9 +6,12 @@ const mongoose = require('mongoose');
 
 const userSchema = mongoose.Schema({
     name: String,
-    email: String,
+    email: {
+        type: String,
+        unique: true
+    },
     mobile: String,
-    fb_id: {
+    fb_user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'fb_user'
     },
@@ -50,6 +53,17 @@ userSchema.statics.fromEmailReadOnly = (email) => {
 
         return users[0];
     })
+}
+
+userSchema.statics.addFromFB = (fbUser) => {
+    const newUser = new userModel({
+        name: fbUser.name,
+        email: fbUser.email,
+        created_at: new Date(),
+        activated: true,
+        fb_user: fbUser
+    });
+    return newUser.save()
 }
 
 
