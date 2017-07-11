@@ -9,6 +9,8 @@ const response = require('./response');
 
 router.post('/add/:id', jwtUtils.checkToken, (req, res) => {
     console.log(req.body);
+    // checking if any required param
+    // is missing
     if (!req.body.merchant ||
         !req.body.amount ||
         !req.body.currency ||
@@ -37,7 +39,7 @@ router.get('/getall/:id', jwtUtils.checkToken, (req, res) => {
             })
         })
         .catch(response.error(res));
-}); 
+});
 
 router.get('/get/:id/after/:date', jwtUtils.checkToken, (req, res) => {
     var afterDate = new Date(req.params.date);
@@ -61,14 +63,14 @@ router.get('/get/:id/:billid', jwtUtils.checkToken, (req, res) => {
 });
 
 router.post('/update/:id/:billid', jwtUtils.checkToken, (req, res) => {
-    //at least one of the params shud be present
+    // billid required and
+    // at least one of other bill params should be present
     if (req.body.merchant ||
         req.body.amount ||
         req.body.currency ||
         req.body.category ||
         req.body.date) {
-
-        bill.update({
+    bill.update({
             billid: req.params.billid,
             merchant: req.body.merchant,
             amount: req.body.amount,
@@ -78,15 +80,15 @@ router.post('/update/:id/:billid', jwtUtils.checkToken, (req, res) => {
         })
         .then(response.message(res))
         .catch(response.error(res))
-    } else {
-        response.paramMissing(res);
-    }
+} else {
+    response.paramMissing(res);
+}
 });
 
-router.post('/delete/:id/:billid', jwtUtils.checkToken, (req,res) => {
+router.post('/delete/:id/:billid', jwtUtils.checkToken, (req, res) => {
     bill.delete(req.params.billid)
-    .then(response.message(res))
-    .catch(response.error(res));
+        .then(response.message(res))
+        .catch(response.error(res));
 })
 
 module.exports = router;

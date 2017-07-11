@@ -48,9 +48,13 @@ billSchema.statics.getAfter = (email, date) => {
         })
 };
 
-billSchema.statics.getEditable = (billid) => {
+billSchema.statics.getWritable = (billid) => {
     return billModel.find({
         _id: billid
+    }).then(bills => {
+        if (!bills || bills.length === 0) {
+            throw new Error("bill does not exist")
+        }
     })
 };
 billSchema.statics.getReadable = (billid) => {

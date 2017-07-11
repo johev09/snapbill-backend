@@ -37,7 +37,7 @@ var controller = {
                                 .then(() => {
                                     resolve({
                                         status: 200,
-                                        message: 'bill saved successfully'
+                                        message: newBill._id
                                     })
                                 })
                                 .catch(err => {
@@ -82,36 +82,29 @@ var controller = {
 
     update: (values) => {
         return new Promise((resolve, reject) => {
-            billModel.getEditable(values.billid)
-                .then(bills => {
-                    if (!bills || bills.length == 0) {
-                        reject({
-                            status: 400,
-                            message: 'bill does not exist'
-                        });
-                    } else {
-                        var bill = bills[0];
-                        if (values.merchant)
-                            bill.merchant = values.merchant;
-                        if (values.amount)
-                            bill.amount = values.amount;
-                        if (values.currency)
-                            bill.currency = values.currency;
-                        if (values.category)
-                            bill.category = values.category;
-                        if (values.date) {
-                            if (controller.isDate(values.date)) {
-                                bill.date = bill.date;
-                            } else {
-                                return reject({
-                                    status: 400,
-                                    message: 'bill date invalid'
-                                })
-                            }
+            billModel.getWritable(values.billid)
+                .then(bill => {
+                    var bill = bills[0];
+                    if (values.merchant)
+                        bill.merchant = values.merchant;
+                    if (values.amount)
+                        bill.amount = values.amount;
+                    if (values.currency)
+                        bill.currency = values.currency;
+                    if (values.category)
+                        bill.category = values.category;
+                    if (values.date) {
+                        if (controller.isDate(values.date)) {
+                            bill.date = bill.date;
+                        } else {
+                            return reject({
+                                status: 400,
+                                message: 'bill date invalid'
+                            })
                         }
-
-                        return bill.save();
                     }
+
+                    return bill.save();
                 })
                 .then(bill => {
                     resolve({
